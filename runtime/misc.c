@@ -111,7 +111,7 @@ void caml_gc_log (char *msg, ...)
 
 void caml_gc_message (int level, char *msg, ...)
 {
-  if ((caml_params->verb_gc & level) != 0){
+  if ((caml_params->verb_gc & level) != 0) {
     va_list ap;
     va_start(ap, msg);
     vfprintf (stderr, msg, ap);

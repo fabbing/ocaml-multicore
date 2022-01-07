@@ -329,7 +329,7 @@ CAMLexport const value* caml_named_value(char const *name)
   for (nv = named_value_table[hash_value_name(name)];
        nv != NULL;
        nv = nv->next) {
-    if (strcmp(name, nv->name) == 0){
+    if (strcmp(name, nv->name) == 0) {
       caml_plat_unlock(&named_value_lock);
       return &nv->val;
     }

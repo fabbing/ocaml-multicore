@@ -37,11 +37,11 @@ CAMLexport value caml_alloc (mlsize_t wosize, tag_t tag)
 
   CAMLassert (tag < 256);
   CAMLassert (tag != Infix_tag);
-  if (wosize == 0){
+  if (wosize == 0) {
     result = Atom (tag);
   } else if (wosize <= Max_young_wosize) {
     Alloc_small (result, wosize, tag, { caml_handle_gc_interrupt_no_async_exceptions(); });
-    if (tag < No_scan_tag){
+    if (tag < No_scan_tag) {
       for (i = 0; i < wosize; i++) {
         Field(result, i) = Val_unit;
       }
@@ -316,7 +316,7 @@ CAMLprim value caml_update_dummy(value dummy, value newval)
 
   tag = Tag_val (newval);
 
-  if (tag == Double_array_tag){
+  if (tag == Double_array_tag) {
     CAMLassert (Wosize_val(newval) == Wosize_val(dummy));
     CAMLassert (Tag_val(dummy) != Infix_tag);
     Tag_val(dummy) = Double_array_tag;

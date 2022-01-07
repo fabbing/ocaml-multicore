@@ -89,7 +89,7 @@ struct caml_minor_tables* caml_alloc_minor_tables()
 {
   struct caml_minor_tables *r =
       caml_stat_alloc_noexc(sizeof(struct caml_minor_tables));
-  if(r != NULL)
+  if (r != NULL)
     memset(r, 0, sizeof(*r));
   return r;
 }
