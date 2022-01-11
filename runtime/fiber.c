@@ -190,6 +190,11 @@ Caml_inline void scan_stack_frames(scanning_action f, void* fdata,
 next_chunk:
   if (sp == (char*)Stack_high(stack)) return;
 
+#ifdef WITH_FRAME_POINTERS
+  /* Skip over saved rbp to reach saved rip */
+  sp += sizeof(value);
+#endif
+
   retaddr = *(uintnat*)sp;
   sp += sizeof(value);
 

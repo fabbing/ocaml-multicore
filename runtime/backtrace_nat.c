@@ -62,6 +62,10 @@ frame_descr * caml_next_frame_descriptor
         *pc = 0;
         return NULL;
       }
+#ifdef WITH_FRAME_POINTERS
+      /* Skip over saved rbp */
+      *sp += sizeof(value);
+#endif
       *pc = **(uintnat**)sp;
       *sp += sizeof(value); /* return address */
     }

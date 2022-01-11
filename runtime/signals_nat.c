@@ -69,6 +69,12 @@ void caml_garbage_collection()
   struct stack_info* stack = Caml_state->current_stack;
 
   sp = (char*)stack->sp;
+
+#ifdef WITH_FRAME_POINTERS
+  /* Skip over saved rbp to reach saved rip */
+  sp += sizeof(value);
+#endif
+
   retaddr = *(uintnat*)sp;
 
   { /* Find the frame descriptor for the current allocation */

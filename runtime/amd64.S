@@ -164,14 +164,20 @@
 /* Stack switching operations */
 /******************************************************************************/
 
+/* FIXME fabbing: to validate */
 /* Switch from OCaml to C stack. Clobbers %r10, %r11. */
 #ifdef ASM_CFI_SUPPORTED
+#ifdef WITH_FRAME_POINTERS
+#define SWITCH_OCAML_TO_C_CFI_OFFSET      16 /* rbp + retaddr */
+#else
+#define SWITCH_OCAML_TO_C_CFI_OFFSET      8 /* retaddr */
+#endif
 #define SWITCH_OCAML_TO_C_CFI                                   \
         CFI_REMEMBER_STATE;                                     \
           /* %rsp points to the c_stack_link. */                \
         .cfi_escape DW_CFA_def_cfa_expression, 5,               \
            DW_OP_breg + DW_REG_rsp, Cstack_sp, DW_OP_deref,     \
-           DW_OP_plus_uconst, 8 /* retaddr */
+           DW_OP_plus_uconst, SWITCH_OCAML_TO_C_CFI_OFFSET
 #else
 #define SWITCH_OCAML_TO_C_CFI
 #endif
@@ -496,6 +502,7 @@ ENDFUNCTION(G(caml_call_realloc_stack))
 FUNCTION(G(caml_call_gc))
 CFI_STARTPROC
 LBL(caml_call_gc):
+        ENTER_FUNCTION
         SAVE_ALL_REGS
         movq    %r15, Caml_state(gc_regs)
         SWITCH_OCAML_TO_C
@@ -503,6 +510,7 @@ LBL(caml_call_gc):
         SWITCH_C_TO_OCAML
         movq    Caml_state(gc_regs), %r15
         RESTORE_ALL_REGS
+        LEAVE_FUNCTION
         ret
 CFI_ENDPROC
 ENDFUNCTION(G(caml_call_gc))
@@ -554,6 +562,7 @@ ENDFUNCTION(G(caml_allocN))
 FUNCTION(G(caml_c_call))
 CFI_STARTPROC
         CFI_SIGNAL_FRAME
+        ENTER_FUNCTION
 LBL(caml_c_call):
     /* Arguments:
         C arguments         : %rdi, %rsi, %rdx, %rcx, %r8, and %r9
@@ -568,11 +577,13 @@ LBL(caml_c_call):
         movq    Caml_state(young_ptr), %r15
     /* Load ocaml stack and restore global variables */
         SWITCH_C_TO_OCAML
+        LEAVE_FUNCTION
     /* Return to OCaml caller */
         ret
 CFI_ENDPROC
 ENDFUNCTION(G(caml_c_call))
 
+/* FIXME fabbing needs ENTER_FUNCTION or CFI will be broken! */
 FUNCTION(G(caml_c_call_stack_args))
 CFI_STARTPROC
         CFI_SIGNAL_FRAME
@@ -715,6 +726,7 @@ ENDFUNCTION(G(caml_start_program))
 
 FUNCTION(G(caml_raise_exn))
 CFI_STARTPROC
+        ENTER_FUNCTION
 LBL(caml_raise_exn):
         testq   $1, Caml_state(backtrace_active)
         jne   LBL(116)
@@ -727,8 +739,13 @@ LBL(117):
         movq    %rax, %r12        /* Save exception bucket */
         movq    Caml_state(c_stack), %rsp
         movq    %rax, C_ARG_1     /* arg 1: exception bucket */
+#ifdef WITH_FRAME_POINTERS
+        movq    8(%r10), C_ARG_2   /* arg 2: pc of raise */
+        leaq    16(%r10), C_ARG_3  /* arg 3: sp at raise */
+#else
         movq    (%r10), C_ARG_2   /* arg 2: pc of raise */
         leaq    8(%r10), C_ARG_3  /* arg 3: sp at raise */
+#endif
         movq    Caml_state(exn_handler), C_ARG_4
                                   /* arg 4: sp of handler */
         C_call  (GCALL(caml_stash_backtrace))
@@ -740,6 +757,7 @@ ENDFUNCTION(G(caml_raise_exn))
 
 FUNCTION(G(caml_reraise_exn))
 CFI_STARTPROC
+        ENTER_FUNCTION
         testq   $1, Caml_state(backtrace_active)
         jne   LBL(117)
         RESTORE_EXN_HANDLER_OCAML
@@ -751,6 +769,7 @@ ENDFUNCTION(G(caml_reraise_exn))
 
 FUNCTION(G(caml_raise_exception))
 CFI_STARTPROC
+        ENTER_FUNCTION
         movq    C_ARG_1, %r14                /* Caml_state */
         movq    C_ARG_2, %rax
     /* Load young_ptr into %r15 */
@@ -964,6 +983,7 @@ ENDFUNCTION(G(caml_runstack))
 
 FUNCTION(G(caml_ml_array_bound_error))
 CFI_STARTPROC
+		ENTER_FUNCTION
         LEA_VAR(caml_array_bound_error, %rax)
         jmp     LBL(caml_c_call)
 CFI_ENDPROC
