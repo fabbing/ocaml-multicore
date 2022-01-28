@@ -103,7 +103,17 @@
 #define CFI_SIGNAL_FRAME
 #define CFI_REMEMBER_STATE
 #define CFI_RESTORE_STATE
+#endif
 
+#ifdef WITH_FRAME_POINTERS
+#define ENTER_FUNCTION                      \
+        pushq   %rbp; CFI_ADJUST(8);        \
+        movq    %rsp, %rbp;
+#define LEAVE_FUNCTION                      \
+        popq    %rbp; CFI_ADJUST(-8);
+#else
+#define ENTER_FUNCTION
+#define LEAVE_FUNCTION
 #endif
 
 #ifdef DEBUG
